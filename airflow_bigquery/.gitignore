@@ -1,0 +1,8 @@
+# Docker database volume
+airflow_db/
+
+# Airflow logs
+logs/
+
+# GCP Service Account Key
+gcp_key.json
