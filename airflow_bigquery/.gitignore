@@ -4,5 +4,12 @@ airflow_db/
 # Airflow logs
 logs/
 
+.env
+
 # GCP Service Account Key
 gcp_key.json
+
+airflow_home\standalone_admin_password.txt
+
+#Credentials for the communication between the webserver and scheduler
+secrets\

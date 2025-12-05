@@ -1,28 +1,58 @@
 services:
   webserver:
+    hostname: webserver
+    container_name: webserver
     image: apache/airflow:2.7.1
     restart: always
     ports:
       - "8080:8080"
+    secrets:
+      - webserver_scheduler_credentials
     volumes:
       - ./dags:/opt/airflow/dags
       - ./airflow_db:/opt/airflow/airflow_home
+      - ${GCP_KEY_FILE_PATH}:${GCP_CREDENTIALS_PATH_CONTAINER}
     environment:
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__CORE__AIRFLOW_HOME: /opt/airflow/airflow_home
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow_home/airflow.db
-    command: webserver
+      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/airflow_home/logs
+      AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: /opt/airflow/airflow_home/logs
+      AIRFLOW__LOGGING__SERVE_LOGS: "False"
+      GOOGLE_APPLICATION_CREDENTIALS: ${GCP_CREDENTIALS_PATH_CONTAINER}
+    command: >
+      bash -c '
+      export AIRFLOW__WEBSERVER__SECRET_KEY=$(cat /run/secrets/webserver_scheduler_credentials) &&
+      airflow webserver
+      '
 
   scheduler:
+    hostname: scheduler
+    container_name: scheduler
     image: apache/airflow:2.7.1
     restart: always
+    secrets:
+      - webserver_scheduler_credentials
     volumes:
       - ./dags:/opt/airflow/dags
       - ./airflow_db:/opt/airflow/airflow_home
+      - ${GCP_KEY_FILE_PATH}:${GCP_CREDENTIALS_PATH_CONTAINER}
     environment:
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__CORE__AIRFLOW_HOME: /opt/airflow/airflow_home
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow_home/airflow.db
-    command: scheduler
+      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/airflow_home/logs
+      AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: /opt/airflow/airflow_home/logs
+      AIRFLOW__LOGGING__SERVE_LOGS: "False"
+      GOOGLE_APPLICATION_CREDENTIALS: ${GCP_CREDENTIALS_PATH_CONTAINER}
+    command: >
+      bash -c '
+      export AIRFLOW__WEBSERVER__SECRET_KEY=$(cat /run/secrets/webserver_scheduler_credentials) &&
+      airflow scheduler
+      '
+
+secrets:
+  webserver_scheduler_credentials:
+    file: secrets/webserver_scheduler_credentials/airflow_secret_key.txt
